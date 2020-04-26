@@ -8,11 +8,18 @@
 import arcpy
 import pandas as pd
 
+arcpy.env.workspace = r'D:\CityDNA\Data\Simplification\codetest.gdb'
+arcpy.env.overwriteOutput = True
+
 # set the path of siwei data
-workdir = r'D:\cityDNA\Data\ChinaRoad_38city.gdb\\'
+siweidir = r'D:\cityDNA\Data\ChinaRoad_38city.gdb'
+
+citylist = pd.read_csv(r'D:\CityDNA\Data\addonroads\city.csv', engine='python')['Name_EN'].tolist()
+
+
 def seperate_highway_road(city):
     print city + ' seperate highway/road...'
-    city_siwei = workdir + city
+    city_siwei = siweidir + "\\" + city
     city_siwei_highway = city + '_swhighway'
     city_siwei_road = city + '_swroad'
     arcpy.MakeFeatureLayer_management(city_siwei, 'city_siwei')
@@ -452,16 +459,6 @@ def CancelOverlapRoads(basemap, cancelmap):
 函数定义部分结束，以下为循环运行部分
 '''
 
-citylist = pd.read_csv(r'D:\CityDNA\Data\addonroads\city.csv', engine='python')['Name_EN'].tolist()
-
-arcpy.env.workspace = r'D:\CityDNA\Data\Simplification\codetest.gdb'
-arcpy.env.overwriteOutput = True
-
-# test
-city = 'beijing'
-basemap = city + "_highway"
-addonmap = city + "_swhighway"
-
 # addonroads
 for city in citylist:
     seperate_highway_road(city)
@@ -506,7 +503,7 @@ for city in citylist:
     keeplist.append(city + "_highway")
     keeplist.append(city + "_swhighway")
     keeplist.append(city + "_road")
-    keeplist.append(city + "_swunhighway")
+    keeplist.append(city + "_swroad")
     keeplist.append(city + "_highway" + "_osm_add_siwei")
     keeplist.append(city + "_road" + "_osm_add_siwei")
     keeplist.append(city + "_highway_addon")
@@ -518,3 +515,5 @@ files = arcpy.ListFeatureClasses()
 for fl in files:
     if fl not in keeplist:
         arcpy.Delete_management(fl)
+print "Finish delete files!!!"
+
