@@ -49,7 +49,7 @@ Line25（citylist）：读入待处理的城市名称，命名规则为该城市
 | city_highway_addon         | 属性表处理之后的“city_highway_osm_add_siwei”数据    |
 | city_road_addon            | 属性表处理之后的“city_road_osm_add_siwei”数据       |
 
-（如果不想保留每个城市的九个文件，请在Line729 ~ Line736部分代码中删去不想保留的文件名即可）
+（如果不想保留每个城市的8个文件，请在Line729 ~ Line736部分代码中删去不想保留的文件名即可）
 
  
 
