@@ -8,13 +8,13 @@
 import arcpy
 import pandas as pd
 
-arcpy.env.workspace = r'D:\CityDNA\Data\Simplification\codetest2.gdb'
+arcpy.env.workspace = r'D:\CityDNA\Data\Simplification\fourcity\fourcity\citysingle.gdb'
 arcpy.env.overwriteOutput = True
 
 # simplified road data (simp_path should be same as 'arcpy.env.workspace' in osm_siwei_simplify_highway_road.py)
-simp_path = r'D:\CityDNA\Data\Simplification\codetest1.gdb'
+simp_path = r'D:\CityDNA\Data\Simplification\fourcity\fourcity\siwei_single_road.gdb'
 
-citylist = pd.read_csv(r'D:\CityDNA\Data\addonroads\city.csv', engine='python')['Name_EN'].tolist()
+citylist = pd.read_csv(r"D:\CityDNA\Data\Simplification\new33city\citylist_33city.csv", engine='python')['name'].tolist()
 
 
 # canceloverlap and merge

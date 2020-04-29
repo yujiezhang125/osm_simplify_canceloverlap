@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020/03/17
-# @Author  : XiaoShan
+# @Author  : yujiezhang125
 # @FileName: osm_siwei_simplify_highway_road.py
 # @Description: Seperate osm highway and non-highway into two part.
 # @Description: Simplify highway and non-highway, and merge multi-line roads to single-line roads
@@ -8,21 +8,21 @@
 import arcpy
 import pandas as pd
 
-arcpy.env.workspace = r'D:\CityDNA\Data\Simplification\codetest1.gdb'
+arcpy.env.workspace = r'D:\CityDNA\Data\Simplification\fourcity\fourcity\siwei_single_road.gdb'
 arcpy.env.overwriteOutput = True
 
 # read in osm data of whole country
 china_osm2020 = r'D:\cityDNA\Data\Simplification\gis_osm_roads_free_1\gis_osm_roads_free_1.shp'
 # read in 38 cities' boundary
-clip_root = r'D:\cityDNA\Data\Simplification\china_city_osm\boundary_38'
+clip_root = r'D:\CityDNA\Data\Simplification\fourcity\fourcity\bound.gdb'
 # output path
 workdir = arcpy.env.workspace + '\\'
 
 # set the path of siwei data
-siweidir = r'D:\cityDNA\Data\ChinaRoad_38city.gdb'
+# siweidir = r'D:\cityDNA\Data\ChinaRoad_38city.gdb'
 
 # read in citylist
-citylist = pd.read_csv(clip_root + '\\city.csv', engine='python')['Name_EN'].tolist()
+citylist = pd.read_csv(r"D:\CityDNA\Data\Simplification\new33city\citylist_33city.csv", engine='python')['name'].tolist()
 
 
 def clip_city_original_osm(city):
@@ -31,7 +31,7 @@ def clip_city_original_osm(city):
     :return: 返回当前城市的osm路网
     """
     print city + ' clipping...'
-    boundary = clip_root + "\\" + city + '.shp'
+    boundary = clip_root + "\\" + city  # + '.shp'
     outpath = workdir + city
     arcpy.Clip_analysis(china_osm2020, boundary, outpath)
 
@@ -61,30 +61,34 @@ def seperate_highway_unhighway(city):
     """
     print city + ' seperate highway/unhighway...'
     city_osm = workdir + city
-    city_osm_highway = workdir + city + 'highway'
-    city_osm_unhighway = workdir + city + 'unhighway'
+    city_osm_highway = workdir + city + '_highway'
+    city_osm_road = workdir + city + '_road'
     arcpy.MakeFeatureLayer_management(city_osm, 'city_osm')
     arcpy.SelectLayerByAttribute_management('city_osm', 'NEW_SELECTION',
                                             "fclass LIKE 'motorway%' OR fclass LIKE 'trunk%'")
     arcpy.CopyFeatures_management('city_osm', city_osm_highway)
     arcpy.SelectLayerByAttribute_management('city_osm', 'SWITCH_SELECTION',
                                             "fclass LIKE 'motorway%' OR fclass LIKE 'trunk%'")
-    arcpy.CopyFeatures_management('city_osm', city_osm_unhighway)
+    arcpy.CopyFeatures_management('city_osm', city_osm_road)
     arcpy.Delete_management('city_osm')
 
 
 def unhighway_select(city):
     """
     :param city: 待处理城市的名称（汉语拼音全拼 小写字母）
-    :return: 分别返回当前城市非高速路网筛选后的结果（city + 'unhighway_selected'）
+    :return: 分别返回当前城市非高速路网筛选后的结果（city + '_unhighway_selected'）
     """
-    print city + ' unhighway select...'
-    city_osm_unhighway = workdir + city + 'unhighway'
-    city_osm_unhighway_select = workdir + city + 'unhighway_selected'
-    arcpy.MakeFeatureLayer_management(city_osm_unhighway, 'temp')
+    print city + ' road select...'
+    city_osm_road = workdir + city + '_road'
+    city_osm_road_select = workdir + city + '_road_selected'
+    arcpy.MakeFeatureLayer_management(city_osm_road, 'temp')
     expression = "fclass NOT IN ('footway', 'cycleway', 'living_street', 'path', 'pedestrian', 'unclassified', 'unknown', 'service', 'steps')"
     arcpy.SelectLayerByAttribute_management('temp', 'NEW_SELECTION', expression)
-    arcpy.CopyFeatures_management('temp', city_osm_unhighway_select)
+    arcpy.CopyFeatures_management('temp', city_osm_road_select)
+    arcpy.Delete_management('temp')
+
+    arcpy.MakeFeatureLayer_management(city_osm_road_select, 'temp')
+    arcpy.CopyFeatures_management('temp', city_osm_road)
     arcpy.Delete_management('temp')
 
 
@@ -96,7 +100,7 @@ def highwaysimp(city):
     # remove '%link%' class
     print city + ' Highway' + ' remove link roads...'
     fclass_remove = ['trunk_link', 'motorway_link']
-    arcpy.MakeFeatureLayer_management(city + 'highway', "lyr")  # read in original highway data
+    arcpy.MakeFeatureLayer_management(city + '_highway', "lyr")  # read in original highway data
     arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION",
                                             '"fclass" NOT IN (\'' + '\',\''.join(map(str, fclass_remove)) + '\')')
     arcpy.CopyFeatures_management("lyr", city + "_hnl")
@@ -180,7 +184,7 @@ def unhighwaysimp(city):
     print city + ' unHighway' + ' removing link roads...'
     fclass_remove = ['footway', 'cycleway', 'living_street', 'path', 'pedestrian', 'unclassified', 'unknown', 'service',
                      'steps', 'primary_link', 'secondary_link', 'tertiary_link']
-    arcpy.MakeFeatureLayer_management(city + "unhighway", "lyr")  # read in original unhighway data
+    arcpy.MakeFeatureLayer_management(city + "_road", "lyr")  # read in original unhighway data
     arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION",
                                             '"fclass" NOT IN (\'' + '\',\''.join(map(str, fclass_remove)) + '\')')
     arcpy.CopyFeatures_management("lyr", city + "_uhs")
@@ -333,7 +337,12 @@ def unhighwaysimp(city):
     print city + ' unHighway' + ' Finished!!!'
 
 
+'''
 def seperate_highway_road(city):
+    """
+    :param city: 待处理城市名称
+    :return: 该城市的siwei路网高速和非高速分类，输出city_swhighway,city_swroad
+    """
     print city + ' seperate highway/road...'
     city_siwei = siweidir + "\\" + city
     city_siwei_highway = city + '_swhighway'
@@ -346,6 +355,7 @@ def seperate_highway_road(city):
                                             "rdClass LIKE 'rd00%' OR rdClass LIKE 'rd02%'")
     arcpy.CopyFeatures_management('city_siwei', city_siwei_road)
     arcpy.Delete_management('city_siwei')
+'''
 
 
 def addonroads(basemap, addonmap):
@@ -668,7 +678,7 @@ for city in citylist:
     # ---当name字段为空而ref字段有信息时，将ref信息补充到name
     name_ref(city)
 
-    # ---将每个城市的高速和非高速部分分离开
+    # ---将每个城市的osm路网高速和非高速部分分离开
     seperate_highway_unhighway(city)
 
     # ---将每个城市中非高速中需要简化的路段提取出来
@@ -683,6 +693,8 @@ for city in citylist:
     # ---添加需要保留的文件
     keeplist.append(city + '_highway')
     keeplist.append(city + '_road')
+    keeplist.append(city + '_swhighway')
+    keeplist.append(city + '_swroad')
 print 'All cities finished!!!'
 
 # 删除中间文件
@@ -691,12 +703,12 @@ files = arcpy.ListFeatureClasses()
 for fl in files:
     if fl not in keeplist:
         arcpy.Delete_management(fl)
-print city + " Finished!"
+print "delete files Finished!"
 
 # seperate siwei data to _swhighway and _swroad & add siwei roads to osm roads
 for city in citylist:
     # ---提取siwei路段的高速和非高速部分
-    seperate_highway_road(city)
+    # seperate_highway_road(city)
 
     # ---合并siwei和osm的高速路段
     addonroads(city + "_highway", city + "_swhighway")
@@ -740,5 +752,3 @@ for fl in files:
     if fl not in keeplist:
         arcpy.Delete_management(fl)
 print "Finish delete files!!!"
-
-
