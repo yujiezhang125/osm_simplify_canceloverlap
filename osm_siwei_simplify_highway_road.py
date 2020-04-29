@@ -19,7 +19,7 @@ clip_root = r'D:\CityDNA\Data\Simplification\fourcity\fourcity\bound.gdb'
 workdir = arcpy.env.workspace + '\\'
 
 # set the path of siwei data
-# siweidir = r'D:\cityDNA\Data\ChinaRoad_38city.gdb'
+siweidir = r'D:\cityDNA\Data\ChinaRoad_38city.gdb'
 
 # read in citylist
 citylist = pd.read_csv(r"D:\CityDNA\Data\Simplification\new33city\citylist_33city.csv", engine='python')['name'].tolist()
@@ -31,7 +31,7 @@ def clip_city_original_osm(city):
     :return: 返回当前城市的osm路网
     """
     print city + ' clipping...'
-    boundary = clip_root + "\\" + city  # + '.shp'
+    boundary = clip_root + "\\" + city + '.shp'
     outpath = workdir + city
     arcpy.Clip_analysis(china_osm2020, boundary, outpath)
 
@@ -337,7 +337,6 @@ def unhighwaysimp(city):
     print city + ' unHighway' + ' Finished!!!'
 
 
-'''
 def seperate_highway_road(city):
     """
     :param city: 待处理城市名称
@@ -355,7 +354,6 @@ def seperate_highway_road(city):
                                             "rdClass LIKE 'rd00%' OR rdClass LIKE 'rd02%'")
     arcpy.CopyFeatures_management('city_siwei', city_siwei_road)
     arcpy.Delete_management('city_siwei')
-'''
 
 
 def addonroads(basemap, addonmap):
@@ -708,7 +706,7 @@ print "delete files Finished!"
 # seperate siwei data to _swhighway and _swroad & add siwei roads to osm roads
 for city in citylist:
     # ---提取siwei路段的高速和非高速部分
-    # seperate_highway_road(city)
+    seperate_highway_road(city)
 
     # ---合并siwei和osm的高速路段
     addonroads(city + "_highway", city + "_swhighway")
